@@ -1,6 +1,9 @@
 *.pyc
 *.mo
 *~
+.project
+.pydevproject
+.settings
 /conf
 /docs
 /env
