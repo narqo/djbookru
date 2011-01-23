@@ -13,7 +13,7 @@ else:
 from openid.store import nonce as oid_nonce
 from openid.store.interface import OpenIDStore
 from openid.association import Association as OIDAssociation
-from yadis import xri
+from openid.yadis import xri
 
 import time, base64
 from django.utils.hashcompat import md5_constructor
@@ -29,17 +29,17 @@ class OpenID:
         self.pape = pape or {}
         self.ax = ax or {}
         self.is_iname = (xri.identifierScheme(openid) == 'XRI')
-    
+
     def __repr__(self):
         return '<OpenID: %s>' % self.openid
-    
+
     def __str__(self):
         return self.openid
 
 class DjangoOpenIDStore(OpenIDStore):
     def __init__(self):
         self.max_nonce_age = 6 * 60 * 60 # Six hours
-    
+
     def storeAssociation(self, server_url, association):
         assoc = Association(
             server_url = server_url,
@@ -50,7 +50,7 @@ class DjangoOpenIDStore(OpenIDStore):
             assoc_type = association.assoc_type
         )
         assoc.save()
-    
+
     def getAssociation(self, server_url, handle=None):
         assocs = []
         if handle is not None:
@@ -76,7 +76,7 @@ class DjangoOpenIDStore(OpenIDStore):
         if not associations:
             return None
         return associations[-1][1]
-    
+
     def removeAssociation(self, server_url, handle):
         assocs = list(Association.objects.filter(
             server_url = server_url, handle = handle
@@ -85,16 +85,16 @@ class DjangoOpenIDStore(OpenIDStore):
         for assoc in assocs:
             assoc.delete()
         return assocs_exist
-    
+
     def storeNonce(self, nonce):
         nonce, created = Nonce.objects.get_or_create(
             nonce = nonce, defaults={'expires': int(time.time())}
         )
-    
+
     def useNonce(self, server_url, timestamp, salt):
         if abs(timestamp - time.time()) > oid_nonce.SKEW:
             return False
-        
+
         try:
             nonce = Nonce( server_url=server_url, timestamp=timestamp, salt=salt)
             nonce.save()
@@ -102,7 +102,7 @@ class DjangoOpenIDStore(OpenIDStore):
             raise
         else:
             return 1
-    
+
     def getAuthKey(self):
         # Use first AUTH_KEY_LEN characters of md5 hash of SECRET_KEY
         return md5_constructor(settings.SECRET_KEY).hexdigest()[:self.AUTH_KEY_LEN]
